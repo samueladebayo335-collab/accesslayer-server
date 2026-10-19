@@ -21,6 +21,10 @@ export const ErrorCode = {
    NOT_A_CREATOR: 'not_a_creator',
    TOKEN_EXPIRY_TAMPERED: 'token_expiry_tampered',
    MISSING_IAT: 'missing_iat',
+   MEMO_TOO_LONG: 'memo_too_long',
+   MEMO_EMPTY: 'memo_empty',
+   MEMO_INVALID_ENCODING: 'memo_invalid_encoding',
+   TWAP_INVALID: 'TWAPInvalid',
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];

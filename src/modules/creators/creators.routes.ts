@@ -11,6 +11,7 @@ import {
    httpGetCreatorAnalytics,
 } from './creators.controllers';
 import { httpGetCreatorHolders } from './creator-holders.controller';
+import { httpGetCreatorSocial } from './creator-social.controller';
 import { httpGetVolumeLeaderboard } from './creator-leaderboard-volume.controller';
 import {
    httpGetCreatorPublicProfile,
@@ -25,6 +26,7 @@ import { validateCreatorParam } from '../../middlewares/creator-param.middleware
 import { requireCreatorProfileOwnership } from '../../middlewares/wallet-ownership.middleware';
 import { requireStellarSignature } from '../../middlewares/stellar-signature.middleware';
 import { buyKeyRateLimit } from '../../middlewares/wallet-rate-limit.middleware';
+import { enforceBuyCooldown } from '../../middlewares/buy-cooldown.middleware';
 import { validateBody } from '../../middlewares/validate-body.middleware';
 import { httpBuyCreatorKey, buySchema } from '../creator/buy.controller';
 import { httpSellCreatorKey, sellSchema } from '../creator/sell.controller';
@@ -59,6 +61,7 @@ creatorsRouter.post(
    platformPauseGuard(),
    requireStellarSignature(),
    buyKeyRateLimit,
+   enforceBuyCooldown(),
    validateBody(buySchema),
    httpBuyCreatorKey
 );
@@ -147,6 +150,31 @@ creatorsRouter.get(
 );
 // 405 handler for /:id/holders
 creatorsRouter.all('/:id/holders', (_req, res) => {
+   res.set('Allow', 'GET').sendStatus(405);
+});
+
+/**
+ * GET /api/v1/creators/:wallet/social
+ *
+ * Returns social metadata (display name, bio, avatar URL, social links)
+ * synced from SocialMetadataUpdated events for the creator identified by
+ * the given Stellar wallet address. Creator id / handle is accepted as a
+ * fallback identifier.
+ *
+ * Public endpoint; HTTP cache is capped at 60 seconds so clients observe
+ * social updates within the freshness budget.
+ */
+creatorsRouter.get(
+   '/:wallet/social',
+   validateCreatorParam('wallet'),
+   createCreatorReadMetricsMiddleware('detail'),
+   cacheControl(
+      CREATOR_PUBLIC_ROUTE_CACHE_PRESETS[CREATOR_PUBLIC_ROUTE_NAMES.GET_SOCIAL]
+   ),
+   httpGetCreatorSocial
+);
+// 405 handler for /:wallet/social
+creatorsRouter.all('/:wallet/social', (_req, res) => {
    res.set('Allow', 'GET').sendStatus(405);
 });
 

@@ -7,6 +7,10 @@ model CreatorProfile {
   displayName       String
   bio               String?
   avatarUrl         String?
+  avatarCid         String?  @map("avatar_cid")
+  twitter           String?
+  website           String?
+  discord           String?
   perkSummary       String?
   isVerified        Boolean  @default(false)
   tradingPaused     Boolean  @default(false)
@@ -62,6 +66,9 @@ model CreatorProfile {
   relaunches       CreatorKeyRelaunch[]
   successor        CreatorProfile?        @relation("KeySuccessor", fields: [successorKeyId], references: [id], onDelete: SetNull)
   supersededKeys   CreatorProfile[]       @relation("KeySuccessor")
+
+  socialMetadata       CreatorSocialMetadata?
+  socialMetadataEvents SocialMetadataEvent[]
 
   @@index([userId])
   @@index([successorKeyId])

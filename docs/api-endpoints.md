@@ -157,6 +157,41 @@ Get public stats for a specific creator.
 }
 ```
 
+### GET /creators/:wallet/social
+
+Get the on-chain synced social metadata for a creator, keyed by wallet
+address, creator id, or handle (`:wallet` accepts any of the three).
+
+- **Auth:** None
+- **Headers:** `Cache-Control: public, max-age=60` (short TTL so on-chain
+  social updates propagate within ~60 seconds)
+- **Response:** `200 OK`
+
+```json
+{
+   "success": true,
+   "data": {
+      "creatorId": "...",
+      "handle": "ada",
+      "wallet": "GWALLET...",
+      "displayName": "Ada Artist",
+      "bio": "On-chain bio",
+      "avatarUrl": "https://gateway.pinata.cloud/ipfs/bafy...",
+      "avatarCid": "bafy...",
+      "links": [{ "label": "X", "url": "https://x.com/ada" }],
+      "synced": true,
+      "updatedAt": "2026-10-17T10:00:00.000Z",
+      "source": { "ledger": 500, "txHash": "tx-social-1", "eventIndex": 0 }
+   }
+}
+```
+
+When no `SocialMetadataUpdated` event has been indexed for the creator yet, the
+endpoint still returns `200 OK` with `synced: false`, `links: []`, and `null`
+display/bio/avatar fields plus a `null` `source`. The avatar is resolved from
+its IPFS CID via `PINATA_GATEWAY_URL`. See
+[social-metadata-sync.md](./social-metadata-sync.md) for the sync details.
+
 ---
 
 ## Creator Profile Endpoints
@@ -573,6 +608,48 @@ window, with alert and auto-suspension state.
    }
 }
 ```
+
+---
+
+## Keys Endpoints
+
+### GET /keys/:keyId/price
+
+Returns the current bonding-curve buy and sell price for a given quantity of
+keys. Resolves `keyId` by database id **or** handle. All bigint values are
+serialised as strings. Response is cached in Redis for 10 seconds.
+
+- **Auth:** None
+- **Query Params:**
+   - `quantity` (integer, 1–1 000 000, default `1`) — number of keys to price
+
+- **Response:** `200 OK`
+
+```json
+{
+   "success": true,
+   "data": {
+      "keyId": "cm_creator_abc",
+      "quantity": 5,
+      "currentSupply": "100",
+      "buy": {
+         "unitPrice": "11250000",
+         "totalCost": "56250000"
+      },
+      "sell": {
+         "unitPrice": "10750000",
+         "totalProceeds": "53750000"
+      },
+      "priceImpactPercent": "2.27"
+   }
+}
+```
+
+> `sell` is `null` when `quantity` exceeds the current circulating supply.
+
+- **Error Responses:**
+   - `400 Bad Request` — `quantity` is missing, non-integer, ≤ 0, or > 1 000 000
+   - `404 Not Found` — key does not exist
 
 ---
 
